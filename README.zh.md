@@ -16,7 +16,17 @@ English: [README.md](./README.md)
 
 ## 安装
 
-### 本地目录安装（推荐）
+### 从插件市场安装（推荐）
+
+DSH → 插件 → 自定义插件市场 → **添加索引源**，粘贴：
+
+```text
+https://wa2124184.github.io/dsh-ai-trends-digest/index.json
+```
+
+刷新后「发现」页会出现 **AI 趋势日报**，点安装即可（底层从 npm 拉取 `dsh-ai-trends-digest@1.0.0`）。
+
+### 本地目录安装（开发调试）
 
 把整个文件夹放到任意位置，然后对 DSH 说：
 
@@ -124,7 +134,7 @@ node test/smoke.mjs --output ./.tmp-out --window 48
    git tag v1.0.0 && git push origin v1.0.0
    ```
 
-4. **托管索引**：把 `market/` 整个目录放到 GitHub Pages / 任意静态站点，得到 `https://<你的域名>/market/index.json`。然后把 `market/index.json` 里补上 `homepage` 和 `repository.url`。
+4. **托管索引**：把 `market/` 里的 `index.json` 与 `icons/` 放到 GitHub Pages 仓库根目录，得到 `https://<你的账号>.github.io/dsh-ai-trends-digest/index.json`。`market/index.json` 里的 `homepage`、`repository.url` 已填好。
 
 5. **让用户添加索引**：DSH → 插件 → 自定义插件市场 → 添加索引源 → 粘贴上面的 URL。之后「发现」页就会出现 **AI 趋势日报**，点安装即可。
 

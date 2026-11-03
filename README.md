@@ -17,6 +17,16 @@ If you are not using DSH, the engine in `core.js` is plain Node.js (>= 18, zero 
 
 ## Install
 
+### From the plugin market
+
+In DSH: Plugins → custom plugin market → **add index source**, then paste:
+
+```text
+https://wa2124184.github.io/dsh-ai-trends-digest/index.json
+```
+
+Refresh — **AI Trends Digest** appears under Discover and installs from npm (`dsh-ai-trends-digest@1.0.0`).
+
 ### From a local folder
 
 Copy this folder anywhere, then ask DSH to install the bundle (this writes the profile's `package.json` and `cordis.patch.yml`):

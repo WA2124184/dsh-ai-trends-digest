@@ -4,6 +4,15 @@
   "description": "Daily embodied-AI & large-model trends digest for DeepSeek Harness: one tool, zero runtime dependencies.",
   "type": "module",
   "license": "MIT",
+  "author": "WA2124184",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WA2124184/dsh-ai-trends-digest.git"
+  },
+  "homepage": "https://github.com/WA2124184/dsh-ai-trends-digest#readme",
+  "bugs": {
+    "url": "https://github.com/WA2124184/dsh-ai-trends-digest/issues"
+  },
   "exports": {
     ".": "./index.js",
     "./core": "./core.js",

@@ -38,7 +38,11 @@
         "zh": "从 23 个 RSS / Atom 源抓取具身智能与大模型趋势，去重、按主题保底打分，输出 Markdown 与 HTML 日报归档。"
       },
       "icon": "icons/dsh-ai-trends-digest.svg",
-      "author": "dsh-ai-trends-digest contributors",
+      "author": "WA2124184",
+      "homepage": "https://github.com/WA2124184/dsh-ai-trends-digest",
+      "repository": {
+        "url": "https://github.com/WA2124184/dsh-ai-trends-digest"
+      },
       "metadata": {
         "category": "tools",
         "keywords": [
