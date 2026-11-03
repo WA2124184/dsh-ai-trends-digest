@@ -69,13 +69,18 @@ export function decodeEntities(text) {
 }
 
 export function htmlToText(html, max = 300) {
+  // 有些源把 HTML 双重转义（&lt;p&gt;…），所以「解码 → 去标签」做两轮。
   const text = decodeEntities(
-    String(html || '')
+    decodeEntities(String(html || ''))
       .replace(/<script[\s\S]*?<\/script>/gi, ' ')
       .replace(/<style[\s\S]*?<\/style>/gi, ' ')
       .replace(/<[^>]+>/g, ' '),
   )
+    .replace(/<[^>]+>/g, ' ')
     .replace(/\s+/g, ' ')
+    .replace(/\s+([，。；：！？、）》】”’])/g, '$1')
+    .replace(/([（《【“‘])\s+/g, '$1')
+    .replace(/([，。；：！？、])\s+/g, '$1')
     .trim();
   return text.length > max ? `${text.slice(0, max).trim()}…` : text;
 }

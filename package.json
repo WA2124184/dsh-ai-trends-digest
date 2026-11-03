@@ -27,6 +27,7 @@
     "cordis.patch.yml",
     "locale/*.json",
     "icon.svg",
+    "examples/run.mjs",
     "README.md",
     "README.zh.md",
     "LICENSE"
