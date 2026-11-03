@@ -1,0 +1,76 @@
+{
+  "format": 1,
+  "title": {
+    "en": "AI Trends Digest Market",
+    "zh": "AI 趋势日报插件市场"
+  },
+  "description": {
+    "en": "A one-entry index for dsh-ai-trends-digest, a daily embodied-AI and large-model trends digest plugin.",
+    "zh": "只有一个条目的索引：AI 趋势日报，每天汇总具身智能与大模型趋势。"
+  },
+  "metadata": {
+    "categories": {
+      "tools": {
+        "title": {
+          "en": "Tools",
+          "zh": "工具"
+        }
+      }
+    },
+    "labels": {
+      "online": {
+        "title": {
+          "en": "Online",
+          "zh": "在线"
+        }
+      }
+    }
+  },
+  "plugins": [
+    {
+      "name": "dsh-ai-trends-digest",
+      "title": {
+        "en": "AI Trends Digest",
+        "zh": "AI 趋势日报"
+      },
+      "description": {
+        "en": "Build a daily roundup of embodied AI and large-model trends from 23 RSS/Atom sources, with dedupe, per-topic floors and Markdown/HTML archives.",
+        "zh": "从 23 个 RSS / Atom 源抓取具身智能与大模型趋势，去重、按主题保底打分，输出 Markdown 与 HTML 日报归档。"
+      },
+      "icon": "icons/dsh-ai-trends-digest.svg",
+      "author": "WA2124184",
+      "homepage": "https://github.com/WA2124184/dsh-ai-trends-digest",
+      "repository": {
+        "url": "https://github.com/WA2124184/dsh-ai-trends-digest"
+      },
+      "metadata": {
+        "category": "tools",
+        "keywords": [
+          "ai",
+          "news",
+          "rss",
+          "digest",
+          "robotics",
+          "embodied-ai",
+          "llm",
+          "dsh-ai-trends-digest"
+        ],
+        "labels": [
+          "online"
+        ]
+      },
+      "versions": [
+        {
+          "version": "1.0.0",
+          "publishTimestamp": 1793683200,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.1.7"
+          }
+        }
+      ]
+    }
+  ]
+}
