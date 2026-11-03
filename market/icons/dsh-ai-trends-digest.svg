@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="AI Trends Digest">
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="#101418"/>
+  <path d="M14 46h36" stroke="#2ee6a8" stroke-width="2" stroke-linecap="round" opacity=".45"/>
+  <path d="M16 38l8-7 7 4 9-13 8 6" fill="none" stroke="#2ee6a8" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="47" cy="28" r="2.6" fill="#2ee6a8"/>
+  <rect x="22" y="12" width="20" height="12" rx="4" fill="none" stroke="#f5f7fa" stroke-width="2.2"/>
+  <circle cx="28" cy="18" r="1.9" fill="#2ee6a8"/>
+  <circle cx="36" cy="18" r="1.9" fill="#2ee6a8"/>
+  <path d="M32 12V8" stroke="#f5f7fa" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="32" cy="7" r="2" fill="#f5f7fa"/>
+</svg>

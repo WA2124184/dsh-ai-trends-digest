@@ -1,0 +1,42 @@
+{
+  "name": "dsh-ai-trends-digest",
+  "version": "1.0.0",
+  "description": "Daily embodied-AI & large-model trends digest for DeepSeek Harness: one tool, zero runtime dependencies.",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": "./index.js",
+    "./core": "./core.js",
+    "./feeds": "./feeds.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "core.js",
+    "feeds.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "README.zh.md",
+    "LICENSE"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "engines": {
+    "node": ">=18",
+    "dsh": ">=0.1.7"
+  },
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "rss",
+    "digest",
+    "embodied-ai",
+    "llm"
+  ]
+}

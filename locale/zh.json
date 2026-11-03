@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "AI 趋势日报",
+    "description": "从 23 个 RSS / Atom 源抓取具身智能与大模型趋势，去重打分后生成 Markdown 与 HTML 日报归档。"
+  }
+}

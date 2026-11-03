@@ -1,0 +1,17 @@
+- insert:
+    - id: ai-trends-digest
+      name: dsh-ai-trends-digest
+      config:
+        timezone: Asia/Shanghai
+        windowHours: 42
+        maxItems: 20
+        maxPerSource: 6
+        minScore: 4.5
+        topNewsCount: 3
+        topicFloors:
+          embodied: 3
+          industry: 2
+          research: 2
+        keepDays: 90
+        # 归档目录，留空则用 ~/.dsh/ai-trends-digest
+        # outputDir: 'D:/工作文档/AI趋势日报'
