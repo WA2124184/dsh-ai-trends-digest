@@ -473,21 +473,107 @@ export function renderHtml(doc, now = new Date()) {
 </body></html>`;
 }
 
+export function renderMobileHtml(doc, now = new Date()) {
+  const color = { embodied: '#0284c7', llm: '#7c3aed', industry: '#d97706', research: '#059669' };
+  const card = (item, rank) => `
+    <a class="card${rank ? ' top' : ''}" href="${esc(item.link)}">
+      ${rank ? `<div class="rk">TOP ${rank}</div>` : ''}
+      <div class="ti">${esc(item.title)}</div>
+      ${item.summary ? `<div class="sm">${esc(item.summary)}</div>` : ''}
+      <div class="mt">${esc(item.source)} · ${esc(elapsed(item.date, now))}</div>
+    </a>`;
+
+  const secs = SECTIONS.filter((section) => (doc.sections[section.key] || []).length || doc.topNews.some((item) => item.topic === section.key));
+  const nav = secs.map((section) => `<a href="#t-${section.key}">${section.emoji} ${esc(section.title)}</a>`).join('');
+  const body = secs
+    .map((section) => {
+      const items = doc.sections[section.key] || [];
+      const inTop = doc.topNews.filter((item) => item.topic === section.key).length;
+      return `
+  <section id="t-${section.key}">
+    <h2 style="--c:${color[section.key]}">${section.emoji} ${esc(section.title)}</h2>
+    <p class="hint">${esc(section.desc)}</p>
+    ${items.map((item) => card(item)).join('')}
+    ${!items.length && inTop ? `<p class="hint">本期该领域 ${inTop} 条均已入选今日要闻 ↑</p>` : ''}
+  </section>`;
+    })
+    .join('');
+
+  return `<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<title>AI 趋势日报 · ${esc(doc.date)}</title>
+<style>
+*{box-sizing:border-box}
+:root{--bg:#f4f6fb;--fg:#0f172a;--sub:#55617a;--mut:#8b95a7;--card:#fff;--line:#e6ecf4;--h1:#0f172a;--h2:#1e293b}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif}
+header{padding:22px 18px 20px;background:linear-gradient(135deg,var(--h1),var(--h2));color:#fff}
+.kicker{font-size:11px;letter-spacing:.2em;opacity:.65;text-transform:uppercase}
+h1{font-size:24px;line-height:1.3;margin:8px 0 6px;font-weight:800}
+.sub{font-size:13px;opacity:.78}
+nav{display:flex;gap:8px;overflow-x:auto;padding:10px 14px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:9;-webkit-overflow-scrolling:touch}
+nav::-webkit-scrollbar{display:none}
+nav a{flex:0 0 auto;padding:7px 12px;border-radius:999px;background:var(--bg);border:1px solid var(--line);color:var(--sub);font-size:13px;text-decoration:none;white-space:nowrap}
+main{padding:14px 14px 30px;max-width:640px;margin:0 auto}
+section{scroll-margin-top:64px}
+h2{font-size:15px;margin:24px 2px 4px;color:var(--c,#111);display:flex;align-items:center;gap:8px}
+h2::after{content:"";flex:1;height:1px;background:var(--line)}
+.hint{margin:0 2px 10px;font-size:12px;color:var(--mut)}
+.card{display:block;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px;text-decoration:none;color:inherit;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+.card.top{border-left:3px solid #ef4444}
+.rk{font-size:11px;font-weight:800;letter-spacing:.12em;color:#ef4444;margin-bottom:5px}
+.ti{font-size:17px;font-weight:700;line-height:1.5;letter-spacing:-.01em}
+.sm{margin-top:7px;font-size:14px;line-height:1.7;color:var(--sub)}
+.mt{margin-top:9px;font-size:12px;color:var(--mut)}
+.obs{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px;font-size:14px;line-height:1.95;color:var(--sub);margin-top:10px}
+footer{max-width:640px;margin:0 auto;padding:6px 18px 30px;font-size:12px;color:var(--mut);line-height:1.8}
+.up{display:inline-block;margin:14px 0 0;font-size:13px;color:#2563eb;text-decoration:none}
+@media (prefers-color-scheme:dark){:root{--bg:#0a1120;--fg:#e9eef8;--sub:#aab5c8;--mut:#7b879b;--card:#121c30;--line:#22314c;--h1:#0a1120;--h2:#16233a}}
+</style></head>
+<body>
+<header id="top">
+  <div class="kicker">Embodied AI &amp; LLM Daily</div>
+  <h1>AI 趋势日报 · ${esc(doc.date)}</h1>
+  <div class="sub">${doc.stats.sourcesOk}/${doc.stats.sourcesTotal} 个源 · 时间窗 ${doc.stats.freshCount} 条 · 精选 ${doc.stats.items} 条</div>
+</header>
+<nav>${nav}</nav>
+<main>
+  <h2 style="--c:#ef4444">🔥 今日要闻</h2>
+  ${doc.topNews.map((item, index) => card(item, index + 1)).join('')}
+  ${body}
+  <h2 style="--c:#64748b">📊 今日观察</h2>
+  <div class="obs">
+    <div>结构：共 ${doc.stats.items} 条（含要闻 ${doc.topNews.length} 条）</div>
+    <div>今日主线：${esc(doc.stats.mainTopic)}（${doc.stats.mainCount} 条）</div>
+    <div>抓取：${doc.stats.sourcesOk}/${doc.stats.sourcesTotal} 个来源可用${doc.stats.failed.length ? `，异常 ${esc(doc.stats.failed.join('、'))}` : ''}</div>
+  </div>
+  <a class="up" href="#top">↑ 回到顶部</a>
+</main>
+<footer>自动生成于 ${esc(now.toLocaleString('zh-CN', { timeZone: doc.timezone }))}<br>关键词规则筛选，未接入人工编辑；请以原文为准。</footer>
+</body></html>`;
+}
+
 /* ------------------------------------------------------------------ */
 /* Output                                                              */
 /* ------------------------------------------------------------------ */
 
-export function writeOutputs(doc, { markdown, html, outputDir, keepDays }) {
+export function writeOutputs(doc, { markdown, html, mobileHtml, outputDir, keepDays }) {
   fs.mkdirSync(path.join(outputDir, 'data'), { recursive: true });
 
   const mdPath = path.join(outputDir, `${doc.date}.md`);
   const htmlPath = path.join(outputDir, `${doc.date}.html`);
+  const mobilePath = path.join(outputDir, `${doc.date}-mobile.html`);
   const dataPath = path.join(outputDir, 'data', `${doc.date}.json`);
   fs.writeFileSync(mdPath, markdown);
   fs.writeFileSync(htmlPath, html);
+  fs.writeFileSync(mobilePath, mobileHtml);
   fs.writeFileSync(dataPath, JSON.stringify(doc, null, 2));
   fs.writeFileSync(path.join(outputDir, 'latest.md'), markdown);
   fs.writeFileSync(path.join(outputDir, 'latest.html'), html);
+  fs.writeFileSync(path.join(outputDir, 'latest-mobile.html'), mobileHtml);
 
   const dates = fs
     .readdirSync(outputDir)
@@ -497,20 +583,20 @@ export function writeOutputs(doc, { markdown, html, outputDir, keepDays }) {
     .reverse();
 
   const links = dates
-    .map((date) => `<li><a href="${date}.html">${date}</a></li>`)
+    .map((date) => `<li><a href="${date}.html">${date}</a> · <a href="${date}-mobile.html">📱 手机版</a></li>`)
     .join('\n');
   fs.writeFileSync(
     path.join(outputDir, 'index.html'),
-    `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>AI 趋势日报归档</title></head>
+    `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AI 趋势日报归档</title></head>
 <body style="font-family:-apple-system,'Segoe UI','PingFang SC',sans-serif;max-width:640px;margin:40px auto;padding:0 20px">
-<h1 style="font-size:22px">AI 趋势日报 · 归档</h1><p><a href="latest.html">最新一期</a></p>
+<h1 style="font-size:22px">AI 趋势日报 · 归档</h1><p><a href="latest.html">最新一期</a> · <a href="latest-mobile.html">📱 手机版</a></p>
 <ol style="line-height:2;font-size:15px">${links}</ol></body></html>`,
   );
 
   if (keepDays > 0) {
     const cutoff = Date.now() - keepDays * 86_400_000;
     for (const file of fs.readdirSync(outputDir)) {
-      const match = file.match(/^(\d{4}-\d{2}-\d{2})\.(md|html)$/);
+      const match = file.match(/^(\d{4}-\d{2}-\d{2})(-mobile)?\.(md|html)$/);
       if (match && new Date(`${match[1]}T00:00:00Z`).getTime() < cutoff) {
         fs.rmSync(path.join(outputDir, file), { force: true });
       }
@@ -524,7 +610,7 @@ export function writeOutputs(doc, { markdown, html, outputDir, keepDays }) {
     }
   }
 
-  return { mdPath, htmlPath, dataPath };
+  return { mdPath, htmlPath, mobilePath, dataPath };
 }
 
 /* ------------------------------------------------------------------ */
@@ -620,10 +706,11 @@ export async function buildDigest({ feeds = DEFAULT_FEEDS, options = {}, logger 
 
   const markdown = renderMarkdown(doc, now);
   const html = renderHtml(doc, now);
-  const paths = writeOutputs(doc, { markdown, html, outputDir, keepDays: config.keepDays });
+  const mobileHtml = renderMobileHtml(doc, now);
+  const paths = writeOutputs(doc, { markdown, html, mobileHtml, outputDir, keepDays: config.keepDays });
   logger(`生成完成：${picked.length} 条 / ${doc.stats.sourcesOk} 个源可用 → ${paths.mdPath}`);
 
-  return { doc, markdown, html, paths, outputDir };
+  return { doc, markdown, html, mobileHtml, paths, outputDir };
 }
 
 export function dateKey(date, timeZone = 'Asia/Shanghai') {
