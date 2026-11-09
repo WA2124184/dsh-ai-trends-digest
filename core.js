@@ -473,13 +473,22 @@ export function renderHtml(doc, now = new Date()) {
 </body></html>`;
 }
 
+// Strip source boilerplate (author / licensing / date lines) so mobile summaries read clean.
+function cleanSummary(text) {
+  return String(text || '')
+    .replace(/^（本文作者[^）]*）\s*/, '')
+    .replace(/^文\s*[|｜]\s*[^\s，。]{1,20}\s+/, '')
+    .replace(/^(IT之家|钛媒体|爱范儿|量子位)\s*\d{1,2}\s*月\s*\d{1,2}\s*日消息[，,]\s*/, '')
+    .trim();
+}
+
 export function renderMobileHtml(doc, now = new Date()) {
   const color = { embodied: '#0284c7', llm: '#7c3aed', industry: '#d97706', research: '#059669' };
   const card = (item, rank) => `
     <a class="card${rank ? ' top' : ''}" href="${esc(item.link)}">
       ${rank ? `<div class="rk">TOP ${rank}</div>` : ''}
       <div class="ti">${esc(item.title)}</div>
-      ${item.summary ? `<div class="sm">${esc(item.summary)}</div>` : ''}
+      ${item.summary ? `<div class="sm">${esc(cleanSummary(item.summary))}</div>` : ''}
       <div class="mt">${esc(item.source)} · ${esc(elapsed(item.date, now))}</div>
     </a>`;
 
@@ -556,24 +565,71 @@ footer{max-width:640px;margin:0 auto;padding:6px 18px 30px;font-size:12px;color:
 </body></html>`;
 }
 
+export function renderMobileMarkdown(doc, now = new Date()) {
+  const cut = (text, n) => {
+    const value = String(text || '').replace(/\s+/g, ' ').trim();
+    return value.length > n ? `${value.slice(0, n)}…` : value;
+  };
+  const lines = [`# AI 趋势日报 · ${doc.date}`, ''];
+  lines.push(`${doc.stats.sourcesOk}/${doc.stats.sourcesTotal} 个源 · 时间窗 ${doc.stats.freshCount} 条 · 精选 ${doc.stats.items} 条`, '');
+
+  lines.push('## 🔥 今日要闻', '');
+  doc.topNews.forEach((item, index) => {
+    lines.push(`${index + 1}. ${item.title}`);
+    const summary = cut(cleanSummary(item.summary), 90);
+    if (summary) lines.push(`   ${summary}`);
+    lines.push(`   ${item.source} · ${elapsed(item.date, now)}`);
+    lines.push(`   ${item.link}`, '');
+  });
+
+  SECTIONS.forEach((section) => {
+    const items = doc.sections[section.key] || [];
+    const inTop = doc.topNews.filter((item) => item.topic === section.key).length;
+    if (!items.length && !inTop) return;
+    lines.push(`## ${section.emoji} ${section.title}（${items.length + inTop} 条）`, '');
+    if (!items.length) {
+      lines.push(`- 本期该领域 ${inTop} 条均已入选今日要闻`, '');
+      return;
+    }
+    items.forEach((item) => {
+      lines.push(`- ${item.title}`);
+      const summary = cut(cleanSummary(item.summary), 80);
+      if (summary) lines.push(`  ${summary}`);
+      lines.push(`  ${item.source} · ${elapsed(item.date, now)}`);
+      lines.push(`  ${item.link}`, '');
+    });
+  });
+
+  lines.push('## 📊 今日观察', '');
+  lines.push(`- 结构：共 ${doc.stats.items} 条（含要闻 ${doc.topNews.length} 条）`);
+  lines.push(`- 今日主线：${doc.stats.mainTopic}（${doc.stats.mainCount} 条）`);
+  lines.push(`- 抓取：${doc.stats.sourcesOk}/${doc.stats.sourcesTotal} 个来源可用${doc.stats.failed.length ? `，异常 ${doc.stats.failed.join('、')}` : ''}`);
+  lines.push('', '---', `自动生成于 ${now.toLocaleString('zh-CN', { timeZone: doc.timezone })}`);
+  lines.push('关键词规则筛选，未接入人工编辑；请以原文为准。');
+  return `${lines.join('\n')}\n`;
+}
+
 /* ------------------------------------------------------------------ */
 /* Output                                                              */
 /* ------------------------------------------------------------------ */
 
-export function writeOutputs(doc, { markdown, html, mobileHtml, outputDir, keepDays }) {
+export function writeOutputs(doc, { markdown, html, mobileHtml, mobileMarkdown, outputDir, keepDays }) {
   fs.mkdirSync(path.join(outputDir, 'data'), { recursive: true });
 
   const mdPath = path.join(outputDir, `${doc.date}.md`);
   const htmlPath = path.join(outputDir, `${doc.date}.html`);
   const mobilePath = path.join(outputDir, `${doc.date}-mobile.html`);
+  const mobileMdPath = path.join(outputDir, `${doc.date}-mobile.md`);
   const dataPath = path.join(outputDir, 'data', `${doc.date}.json`);
   fs.writeFileSync(mdPath, markdown);
   fs.writeFileSync(htmlPath, html);
   fs.writeFileSync(mobilePath, mobileHtml);
+  fs.writeFileSync(mobileMdPath, mobileMarkdown);
   fs.writeFileSync(dataPath, JSON.stringify(doc, null, 2));
   fs.writeFileSync(path.join(outputDir, 'latest.md'), markdown);
   fs.writeFileSync(path.join(outputDir, 'latest.html'), html);
   fs.writeFileSync(path.join(outputDir, 'latest-mobile.html'), mobileHtml);
+  fs.writeFileSync(path.join(outputDir, 'latest-mobile.md'), mobileMarkdown);
 
   const dates = fs
     .readdirSync(outputDir)
@@ -610,7 +666,7 @@ export function writeOutputs(doc, { markdown, html, mobileHtml, outputDir, keepD
     }
   }
 
-  return { mdPath, htmlPath, mobilePath, dataPath };
+  return { mdPath, htmlPath, mobilePath, mobileMdPath, dataPath };
 }
 
 /* ------------------------------------------------------------------ */
@@ -707,10 +763,11 @@ export async function buildDigest({ feeds = DEFAULT_FEEDS, options = {}, logger 
   const markdown = renderMarkdown(doc, now);
   const html = renderHtml(doc, now);
   const mobileHtml = renderMobileHtml(doc, now);
-  const paths = writeOutputs(doc, { markdown, html, mobileHtml, outputDir, keepDays: config.keepDays });
+  const mobileMarkdown = renderMobileMarkdown(doc, now);
+  const paths = writeOutputs(doc, { markdown, html, mobileHtml, mobileMarkdown, outputDir, keepDays: config.keepDays });
   logger(`生成完成：${picked.length} 条 / ${doc.stats.sourcesOk} 个源可用 → ${paths.mdPath}`);
 
-  return { doc, markdown, html, mobileHtml, paths, outputDir };
+  return { doc, markdown, html, mobileHtml, mobileMarkdown, paths, outputDir };
 }
 
 export function dateKey(date, timeZone = 'Asia/Shanghai') {

@@ -27,4 +27,5 @@ console.log(`\n完成：${result.doc.stats.items} 条 / ${result.doc.stats.sourc
 console.log(`Markdown: ${result.paths.mdPath}`);
 console.log(`HTML:     ${result.paths.htmlPath}`);
 console.log(`Mobile:   ${result.paths.mobilePath}`);
+console.log(`MobileMD: ${result.paths.mobileMdPath}`);
 console.log(`JSON:     ${result.paths.dataPath}`);
