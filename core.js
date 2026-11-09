@@ -549,7 +549,10 @@ export function writeOutputs(doc, { markdown, html, mobileText, outputDir, keepD
     .reverse();
 
   const links = dates
-    .map((date) => `<li><a href="${date}.html">${date}</a> · <a href="${date}-mobile.txt">📱 手机版</a></li>`)
+    .map((date) => {
+      const hasTxt = fs.existsSync(path.join(outputDir, `${date}-mobile.txt`));
+      return `<li><a href="${date}.html">${date}</a>${hasTxt ? ` · <a href="${date}-mobile.txt">📱 手机版</a>` : ''}</li>`;
+    })
     .join('\n');
   fs.writeFileSync(
     path.join(outputDir, 'index.html'),
