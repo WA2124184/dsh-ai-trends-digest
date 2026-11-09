@@ -26,6 +26,5 @@ const result = await buildDigest({
 console.log(`\n完成：${result.doc.stats.items} 条 / ${result.doc.stats.sourcesOk}/${result.doc.stats.sourcesTotal} 个源可用`);
 console.log(`Markdown: ${result.paths.mdPath}`);
 console.log(`HTML:     ${result.paths.htmlPath}`);
-console.log(`Mobile:   ${result.paths.mobilePath}`);
-console.log(`MobileMD: ${result.paths.mobileMdPath}`);
+console.log(`MobileTXT: ${result.paths.mobileTextPath}`);
 console.log(`JSON:     ${result.paths.dataPath}`);
