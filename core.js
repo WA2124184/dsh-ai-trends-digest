@@ -479,6 +479,7 @@ function cleanSummary(text) {
     .replace(/^（本文作者[^）]*）\s*/, '')
     .replace(/^文\s*[|｜]\s*[^\s，。]{1,20}\s+/, '')
     .replace(/^(IT之家|钛媒体|爱范儿|量子位)\s*\d{1,2}\s*月\s*\d{1,2}\s*日消息[，,]\s*/, '')
+    .replace(/\s+([，。；：！？、])/g, '$1')
     .trim();
 }
 
