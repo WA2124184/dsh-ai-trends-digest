@@ -23,7 +23,7 @@ English: [README.md](./README.md)
 1. 抓取 **23 个 RSS / Atom / arXiv 源**（中英文都有）；
 2. 只保留最近 42 小时，去掉重复新闻；
 3. 按主题分类，并**给每个主题保底名额**，机器人新闻不会融资稿挤掉；
-4. 写出 `<日期>.md`、`<日期>.html`、`<日期>-mobile.txt`（纯文本手机版）以及 `latest.*` 固定名文件和一份 JSON 快照。
+4. 写出 `<日期>.md`、`<日期>.html`、`<日期>-phone.html`（手机可点版）、`<日期>-mobile.txt`（纯文本）以及 `latest.*` 固定名文件和一份 JSON 快照。
 
 生成的日报大概是这样：
 
@@ -136,9 +136,11 @@ ai_trends_digest(output_dir="D:/AI日报", max_items=20)
 <output_dir>/
 ├─ 2026-11-03.md        # 当天日报
 ├─ 2026-11-03.html      # 同一份，带样式，可直接邮件/浏览器打开
+├─ 2026-11-03-phone.html  # 手机可点版：整张卡片可点、直达原文，浏览器打开
 ├─ 2026-11-03-mobile.txt  # 纯文本手机版：无 Markdown/HTML 符号、无 emoji，链接单独成行
 ├─ latest.md            # 最新一期，文件名固定
 ├─ latest.html
+├─ latest-phone.html    # 最新一期手机可点版
 ├─ latest-mobile.txt    # 最新一期纯文本手机版
 ├─ data/2026-11-03.json # 机器可读快照
 └─ index.html           # 归档浏览页

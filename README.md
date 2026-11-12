@@ -23,7 +23,7 @@ and it calls `ai_trends_digest`, which:
 1. fetches **23 RSS / Atom / arXiv feeds** (Chinese + English),
 2. keeps only the last 42 hours, removes duplicates,
 3. classifies each story and **guarantees slots per topic** so robotics is never buried by funding news,
-4. writes `<date>.md`, `<date>.html`, `<date>-mobile.txt` (symbol-free plain-text phone edition), the matching `latest.*` files, and a JSON snapshot.
+4. writes `<date>.md`, `<date>.html`, `<date>-phone.html` (tap-to-open phone edition), `<date>-mobile.txt` (plain text), the matching `latest.*` files, and a JSON snapshot.
 
 A finished digest looks like this:
 
@@ -136,9 +136,11 @@ The tool returns the item count, source health (`sourcesOk/sourcesTotal`), faile
 <output_dir>/
 ├─ 2026-11-03.md        # today's digest
 ├─ 2026-11-03.html      # same, styled for mail/browser
+├─ 2026-11-03-phone.html  # tap-to-open phone edition: whole card links to the source
 ├─ 2026-11-03-mobile.txt  # plain-text phone edition: no markdown/html symbols, links on their own line
 ├─ latest.md            # newest digest, stable name
 ├─ latest.html
+├─ latest-phone.html    # newest tap-to-open phone edition
 ├─ latest-mobile.txt    # newest plain-text phone edition
 ├─ data/2026-11-03.json # machine-readable snapshot
 └─ index.html           # archive browser
