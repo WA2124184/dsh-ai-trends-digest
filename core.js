@@ -22,12 +22,109 @@ export const DEFAULT_OPTIONS = {
   windowHours: 42,
   maxItems: 20,
   maxPerSource: 6,
+  sourceCaps: { 哔哩哔哩: 3, 知乎热榜: 2 },
   minScore: 4.5,
   topNewsCount: 3,
   topicFloors: { embodied: 3, industry: 2, research: 2 },
   keepDays: 90,
   outputDir: '',
 };
+
+/* ------------------------------------------------------------------ */
+/* Bilibili / Zhihu adapters (no official RSS)                         */
+/* ------------------------------------------------------------------ */
+
+const AI_WORDS =
+  /(具身|机器人|人形|大模型|LLM|GPT|Claude|Gemini|DeepSeek|智能体|Agent|世界模型|VLA|多模态|算力|显卡|GPU|芯片|英伟达|OpenAI|Anthropic|通义|豆包|文心|开源模型|人工智能|AI)/i;
+
+const BROWSER_UA =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36';
+
+let biliCookie = '';
+
+async function biliJson(url) {
+  if (!biliCookie) {
+    try {
+      const home = await fetch('https://www.bilibili.com/', { headers: { 'User-Agent': BROWSER_UA } });
+      const cookies = home.headers.getSetCookie ? home.headers.getSetCookie() : [];
+      biliCookie = cookies.map((c) => c.split(';')[0]).join('; ');
+    } catch {
+      biliCookie = '';
+    }
+  }
+  const res = await fetch(url, {
+    headers: {
+      'User-Agent': BROWSER_UA,
+      Referer: 'https://search.bilibili.com/',
+      ...(biliCookie ? { Cookie: biliCookie } : {}),
+    },
+    signal: AbortSignal.timeout(30000),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const json = await res.json();
+  if (json.code !== 0) throw new Error(`bilibili code ${json.code}`);
+  return json;
+}
+
+function unpackHtml(text) {
+  return String(text || '')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .trim();
+}
+
+export async function fetchBilibili(feed) {
+  const queries = feed.queries || ['具身智能', '人形机器人', '大模型'];
+  const seen = new Set();
+  const out = [];
+  for (const query of queries) {
+    const url = `https://api.bilibili.com/x/web-interface/search/type?search_type=video&keyword=${encodeURIComponent(query)}&page=1&order=pubdate`;
+    try {
+      const json = await biliJson(url);
+      for (const video of json.data?.result || []) {
+        if (!video.bvid || seen.has(video.bvid)) continue;
+        seen.add(video.bvid);
+        const title = unpackHtml(video.title);
+        if (/直播回放|切片|搬运|AI生成视频|合集/.test(title)) continue;
+        out.push({
+          title,
+          link: `https://www.bilibili.com/video/${video.bvid}`,
+          summary: unpackHtml(video.description || video.desc || ''),
+          date: video.pubdate ? new Date(video.pubdate * 1000) : null,
+        });
+      }
+    } catch (error) {
+      if (query === queries[0]) throw error;
+    }
+  }
+  return out;
+}
+
+export async function fetchZhihu(feed) {
+  const res = await fetch(feed.url || 'https://api.zhihu.com/topstory/hot-list?limit=50', {
+    headers: { 'User-Agent': BROWSER_UA, Referer: 'https://www.zhihu.com/hot', Accept: 'application/json' },
+    signal: AbortSignal.timeout(30000),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const json = await res.json();
+  const out = [];
+  for (const entry of json.data || []) {
+    const target = entry.target || {};
+    const title = String(target.title || '').trim();
+    if (!title || !AI_WORDS.test(title)) continue;
+    out.push({
+      title,
+      link: String(target.url || '').replace('https://api.zhihu.com/questions/', 'https://www.zhihu.com/question/'),
+      summary: `${String(target.excerpt || '').replace(/s+/g, ' ').slice(0, 160)} · ${target.answer_count || 0} 个回答`,
+      date: target.created ? new Date(target.created * 1000) : null,
+    });
+  }
+  return out;
+}
 
 /* ------------------------------------------------------------------ */
 /* Network                                                             */
@@ -316,9 +413,11 @@ export function selectItems(scored, options) {
   const perSource = new Map();
   const picked = [];
 
+  const capFor = (source) => Number(options.sourceCaps?.[source] ?? options.maxPerSource);
+
   const take = (item) => {
     const used = perSource.get(item.source) || 0;
-    if (used >= options.maxPerSource) return false;
+    if (used >= capFor(item.source)) return false;
     perSource.set(item.source, used + 1);
     picked.push(item);
     return true;
@@ -667,10 +766,17 @@ export async function buildDigest({ feeds = DEFAULT_FEEDS, options = {}, logger 
   const results = await Promise.allSettled(
     enabled.map(async (feed) => {
       const started = Date.now();
-      const text = await fetchText(feed.url, { timeoutMs: 30000, retries: 2 });
-      const parsed = parseFeed(text, feed);
+      const parsed =
+        feed.type === 'bilibili'
+          ? await fetchBilibili(feed)
+          : feed.type === 'zhihu'
+            ? await fetchZhihu(feed)
+            : parseFeed(await fetchText(feed.url, { timeoutMs: 30000, retries: 2 }), feed);
       logger(`✓ ${feed.name}：${parsed.length} 条（${Date.now() - started}ms）`);
-      return { feed, items: parsed };
+      return {
+        feed,
+        items: parsed.map((item) => ({ source: feed.name, sourceWeight: Number(feed.weight ?? 1), ...item })),
+      };
     }),
   );
 

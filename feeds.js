@@ -54,6 +54,8 @@ export const DEFAULT_FEEDS = [
     weight: 0.8,
     note: 'arXiv 官方 RSS 已失效，改用 Atom API',
   },
+  { name: '哔哩哔哩', type: 'bilibili', url: 'https://api.bilibili.com/x/web-interface/search/type?search_type=video&keyword=%E5%85%B7%E8%BA%AB%E6%99%BA%E8%83%BD&page=1&order=pubdate', weight: 0.6, lang: 'zh', queries: ['具身智能', '人形机器人', '机器人', '大模型', 'AI 智能体', '世界模型'] },
+  { name: '知乎热榜', type: 'zhihu', url: 'https://api.zhihu.com/topstory/hot-list?limit=50', weight: 0.7, lang: 'zh' },
 ];
 
 export const RESEARCH_SOURCES = new Set(['arXiv cs.RO', 'BAIR Blog', 'Microsoft Research']);

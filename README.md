@@ -29,7 +29,7 @@ A finished digest looks like this:
 
 ```markdown
 # AI 趋势日报 · 2026-11-03
-> 具身智能 & 大模型 · 22/23 个订阅源 · 时间窗内 210 条 · 精选 20 条
+> 具身智能 & 大模型 · 25/25 个订阅源 · 时间窗内 210 条 · 精选 20 条
 
 ## 🔥 今日要闻
 1. **【示例】人形机器人量产线落地** — 量子位
@@ -189,9 +189,11 @@ config:
 - `weight` (0.8–2.0) is the ranking multiplier — raise it for sources you trust.
 - Set `enabled: false` to mute a feed without deleting it.
 - To replace the list entirely, pass `feeds: [...]` in the plugin config.
+- Sites without RSS (Bilibili, Zhihu) use built-in adapters via `type`: `{ name: 'Bilibili', type: 'bilibili', queries: ['人形机器人'], weight: 0.6 }` and `{ name: 'Zhihu', type: 'zhihu', url: 'https://api.zhihu.com/topstory/hot-list?limit=50', weight: 0.7 }`.
+- `sourceCaps` limits how many items one feed can contribute (defaults: Bilibili 3, Zhihu 2).
 
 <details>
-<summary>Built-in sources (23)</summary>
+<summary>Built-in sources (25)</summary>
 
 **中文**：量子位、新智元、雷峰网、爱范儿、极客公园、IT之家、钛媒体、InfoQ 中文、Solidot
 
@@ -251,7 +253,7 @@ This really hits the network for all 23 feeds and prints item count, source heal
 dsh-ai-trends-digest/
 ├─ index.js            # plugin entry: registers ai_trends_digest
 ├─ core.js             # fetch / parse / dedupe / score / render / archive
-├─ feeds.js            # 23 default sources
+├─ feeds.js            # 25 default sources
 ├─ cordis.patch.yml    # config row inserted on install
 ├─ locale/{en,zh}.json # market metadata
 ├─ icon.svg            # plugin icon
