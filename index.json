@@ -34,8 +34,8 @@
         "zh": "AI 趋势日报"
       },
       "description": {
-        "en": "Build a daily roundup of embodied AI and large-model trends from 23 RSS/Atom sources, with dedupe, per-topic floors and Markdown/HTML archives.",
-        "zh": "从 23 个 RSS / Atom 源抓取具身智能与大模型趋势，去重、按主题保底打分，输出 Markdown 与 HTML 日报归档。"
+        "en": "Build a daily roundup of embodied AI and large-model trends from 27 RSS/Atom/policy sources, including China gov policy documents, with dedupe, per-topic floors and Markdown/HTML archives.",
+        "zh": "从 27 个 RSS / Atom / 政策源抓取具身智能、大模型趋势与国家政策文件，去重、按主题保底打分，输出 Markdown 与 HTML 日报归档。"
       },
       "icon": "icons/dsh-ai-trends-digest.svg",
       "author": "WA2124184",
