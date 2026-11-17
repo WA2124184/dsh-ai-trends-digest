@@ -20,7 +20,7 @@ English: [README.md](./README.md)
 
 模型会调用 `ai_trends_digest`，做四件事：
 
-1. 抓取 **23 个 RSS / Atom / arXiv 源**（中英文都有）；
+1. 抓取 **27 个 RSS / Atom / arXiv / 政策源**（中英文都有）；
 2. 只保留最近 42 小时，去掉重复新闻；
 3. 按主题分类，并**给每个主题保底名额**，机器人新闻不会融资稿挤掉；
 4. 写出 `<日期>.md`、`<日期>.html`、`<日期>-phone.html`（手机可点版）、`<日期>-mobile.txt`（纯文本）以及 `latest.*` 固定名文件和一份 JSON 快照。
@@ -255,7 +255,7 @@ node test/smoke.mjs --output ./.tmp-out --window 48
 dsh-ai-trends-digest/
 ├─ index.js            # 插件入口：注册 ai_trends_digest 工具
 ├─ core.js             # 抓取 / 解析 / 去重 / 打分 / 渲染 / 归档
-├─ feeds.js            # 23 个默认源
+├─ feeds.js            # 27 个默认源
 ├─ cordis.patch.yml    # 安装时插入的配置行
 ├─ locale/{en,zh}.json # 插件市场展示文案
 ├─ icon.svg            # 插件图标
