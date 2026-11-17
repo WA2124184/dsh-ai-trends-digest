@@ -29,7 +29,7 @@ A finished digest looks like this:
 
 ```markdown
 # AI 趋势日报 · 2026-11-03
-> 具身智能 & 大模型 · 25/25 个订阅源 · 时间窗内 210 条 · 精选 20 条
+> 具身智能 & 大模型 · 27/27 个订阅源 · 时间窗内 210 条 · 精选 20 条
 
 ## 🔥 今日要闻
 1. **【示例】人形机器人量产线落地** — 量子位
@@ -160,7 +160,7 @@ Edit the `config` block of the patch row (Option 3) or the plugin's settings:
 | `maxPerSource` | `6` | max items per feed |
 | `minScore` | `4.5` | global score floor |
 | `topNewsCount` | `3` | pinned headlines |
-| `topicFloors` | `{embodied:3, industry:2, research:2}` | guaranteed slots |
+| `topicFloors` | `{policy:1, embodied:3, industry:2, research:2}` | guaranteed slots |
 | `keepDays` | `90` | archive retention (`0` = never prune) |
 | `outputDir` | `~/.dsh/ai-trends-digest` | default archive directory |
 | `feeds` | built-in 23 | replace the source list |

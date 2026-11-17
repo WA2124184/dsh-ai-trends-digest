@@ -29,7 +29,7 @@ English: [README.md](./README.md)
 
 ```markdown
 # AI 趋势日报 · 2026-11-03
-> 具身智能 & 大模型 · 25/25 个订阅源 · 时间窗内 210 条 · 精选 20 条
+> 具身智能 & 大模型 · 27/27 个订阅源 · 时间窗内 210 条 · 精选 20 条
 
 ## 🔥 今日要闻
 1. **【示例】人形机器人量产线落地** — 量子位
@@ -53,7 +53,9 @@ English: [README.md](./README.md)
 
 泛 AI 资讯有三个老问题：机器人被融资稿淹没、论文标题刷屏、同一件事被多家媒体重复推送。插件用三条规则解决：
 
-- **主题保底**：`embodied: 3`、`industry: 2`、`research: 2` 先把名额占住，剩下的按分数补。
+- **政策板块**：「政策与标准」单独成区，抓取国家/部委政策文件，`policyWindowHours` 默认 720 小时（政策文件更新慢，允许 30 天内文件持续出现）；无新文件时日报底部会注明，不会硬凑。
+
+**主题保底**：`policy: 1`、`embodied: 3`、`industry: 2`、`research: 2` 先把名额占住，剩下的按分数补。
 - **去重**：链接规范化 + 标题相似度（bigram Jaccard ≥ 0.62），量子位和新智元报同一件事只留一条。
 - **打分**：`来源权重 × 2 + 标题命中 × 3 + 正文命中 + 时效`，低于 `4.5` 分不进日报。
 
@@ -160,10 +162,10 @@ ai_trends_digest(output_dir="D:/AI日报", max_items=20)
 | `maxPerSource` | `6` | 单个源最多几条 |
 | `minScore` | `4.5` | 全局分数下限 |
 | `topNewsCount` | `3` | 要闻条数 |
-| `topicFloors` | `{embodied:3, industry:2, research:2}` | 各主题保底条数 |
+| `topicFloors` | `{policy:1, embodied:3, industry:2, research:2}` | 各主题保底条数 |
 | `keepDays` | `90` | 归档保留天数（`0` 不清理） |
 | `outputDir` | `~/.dsh/ai-trends-digest` | 默认归档目录 |
-| `feeds` | 内置 25 源 | 整表替换源列表 |
+| `feeds` | 内置 27 源 | 整表替换源列表 |
 
 例子——想要一份更厚的早报，并且机器人优先：
 
@@ -189,11 +191,11 @@ config:
 - `weight`（0.8–2.0）影响排序，越信任的源给越高；
 - 加 `enabled: false` 可以静音某个源，不用删；
 - 想整表替换，就在配置里传 `feeds: [...]`；
-- 没有 RSS 的站（哔哩哔哩、知乎）用 `type` 走内置适配器：`{ name: '哔哩哔哩', type: 'bilibili', queries: ['具身智能', '大模型'], weight: 0.6 }`、`{ name: '知乎热榜', type: 'zhihu', url: 'https://api.zhihu.com/topstory/hot-list?limit=50', weight: 0.7 }`；
+- 没有 RSS 的站（哔哩哔哩、知乎、中国政府网政策栏）用 `type` 走内置适配器（`bilibili` / `zhihu` / `govpolicy`）；`filter: 'policy'` 表示只保留政策类条目：`{ name: '哔哩哔哩', type: 'bilibili', queries: ['具身智能', '大模型'], weight: 0.6 }`、`{ name: '知乎热榜', type: 'zhihu', url: 'https://api.zhihu.com/topstory/hot-list?limit=50', weight: 0.7 }`；
 - 用 `sourceCaps` 控制单个源最多入选几条（默认 B 站 3、知乎 2）。
 
 <details>
-<summary>内置的 25 个源</summary>
+<summary>内置的 27 个源</summary>
 
 **中文**：量子位、新智元、雷峰网、爱范儿、极客公园、IT之家、钛媒体、InfoQ 中文、Solidot、哔哩哔哩、知乎热榜（后两个无官方 RSS，由内置适配器抓取）
 
@@ -223,12 +225,12 @@ node "D:\tools\dsh-ai-trends-digest\examples\run.mjs" --output "D:\AI日报"
 node test/smoke.mjs --output ./.tmp-out --window 48
 ```
 
-会真的联网抓全部 25 个源，打印条数、源健康度、各主题分布和输出路径。退出码 `1` 表示一条都没选中（通常是周末没新闻或断网）。
+会真的联网抓全部 27 个源，打印条数、源健康度、各主题分布和输出路径。退出码 `1` 表示一条都没选中（通常是周末没新闻或断网）。
 
 ## 它是怎么工作的
 
 ```text
-25 个源 ──► 抓取（30 秒超时，重试 2 次）
+27 个源 ──► 抓取（30 秒超时，重试 2 次）
         ──► 解析 RSS / Atom / JSON Feed
         ──► 42 小时时间窗 ──► 去重（链接 + 标题相似度）
         ──► 分类（具身 / 大模型 / 产业 / 论文）
@@ -240,7 +242,7 @@ node test/smoke.mjs --output ./.tmp-out --window 48
 
 | 现象 | 原因 | 处理 |
 | --- | --- | --- |
-| 第一次跑要 20–40 秒 | 25 个源并行抓取 | 正常 |
+| 第一次跑要 20–40 秒 | 27 个源并行抓取 | 正常 |
 | 有几个源显示 `failed` | 源站 CDN 502 / 超时 | 稍后重试，不会中断整份日报 |
 | 「论文」板块是空的 | arXiv 最近没有新的 cs.RO 投稿（周末常见） | 正常 |
 | 同一条新闻出现两次 | 两个标题相似度低于 0.62 | 觉得碍眼可以调低 `core.js` 里的阈值 |

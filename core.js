@@ -22,10 +22,11 @@ export const DEFAULT_OPTIONS = {
   windowHours: 42,
   maxItems: 20,
   maxPerSource: 6,
-  sourceCaps: { 哔哩哔哩: 3, 知乎热榜: 2 },
+  sourceCaps: { 哔哩哔哩: 3, 知乎热榜: 2, '中国政府网·政策': 3, '中新网·国内': 2 },
   minScore: 4.5,
   topNewsCount: 3,
-  topicFloors: { embodied: 3, industry: 2, research: 2 },
+  topicFloors: { policy: 1, embodied: 3, industry: 2, research: 2 },
+  policyWindowHours: 720,
   keepDays: 90,
   outputDir: '',
 };
@@ -100,6 +101,40 @@ export async function fetchBilibili(feed) {
     } catch (error) {
       if (query === queries[0]) throw error;
     }
+  }
+  return out;
+}
+
+const POLICY_WORDS = /政策|规划|意见|通知|方案|办法|条例|细则|试点|标准|白皮书|行动计划|指导意见|管理办法|规定|草案|若干措施|实施细则|扶持|专项|揭榜|示范/;
+const POLICY_DOC = /《[^》]{4,60}》/;
+
+/** 判断一条内容是否是「AI / 具身相关」的国家政策文件。 */
+export function isPolicy(item) {
+  const title = String(item?.title || '');
+  const body = title + ' ' + String(item?.summary || '');
+  const looksPolicy = POLICY_DOC.test(title) || POLICY_WORDS.test(title);
+  if (!looksPolicy) return false;
+  return /(人工智能|具身|机器人|人形|大模型|智能体|算力|芯片|半导体|数据要素|数字经济|数字化|算法)/.test(body);
+}
+
+/** 抓取中国政府网「政策」栏目里与 AI / 具身相关的文件（静态列表页）。 */
+export async function fetchGovPolicy(feed) {
+  const url = feed.url || 'https://www.gov.cn/zhengce/';
+  const html = await fetchText(url, { timeoutMs: 30000, retries: 2 });
+  const out = [];
+  const re = /<a[^>]+href="([^"]+)"[^>]*>([^<]{4,90})<\/a>/g;
+  let m;
+  while ((m = re.exec(html))) {
+    const href = m[1];
+    if (!/\/content_\d+\.htm/.test(href)) continue;
+    const title = m[2].replace(/\s+/g, ' ').trim();
+    if (!POLICY_WORDS.test(title) && !POLICY_DOC.test(title)) continue;
+    const link = href.startsWith('http') ? href : new URL(href, 'https://www.gov.cn/zhengce/').href;
+    const mo = href.match(/\/(\d{4})(\d{2})\//);
+    const date = mo ? new Date(Number(mo[1]), Number(mo[2]) - 1, 1) : new Date();
+    const candidate = { title, link, summary: '', date };
+    if (!isPolicy(candidate)) continue;
+    out.push({ ...candidate, policy: true });
   }
   return out;
 }
@@ -378,7 +413,8 @@ export function classify(item) {
   ]);
 
   let topic;
-  if (RESEARCH_SOURCES.has(item.source) || titleHits.research > 0) topic = 'research';
+  if (item.policy) topic = 'policy';
+  else if (RESEARCH_SOURCES.has(item.source) || titleHits.research > 0) topic = 'research';
   else if (INDUSTRY_TITLE.test(title) && titleHits.embodied === 0) topic = 'industry';
   else if (titleHits.embodied > 0 && titleHits.embodied >= titleHits.llm) topic = 'embodied';
   else if (titleHits.llm > 0) topic = 'llm';
@@ -401,7 +437,7 @@ export function scoreItem(item, now = new Date()) {
     9,
     item.titleHits.embodied + item.titleHits.llm + item.titleHits.industry + item.titleHits.research,
   );
-  return (item.weight ?? 1) * 2 + titleHits * 3 + Math.min(item.bodyHits, 3) + recencyBonus(item.date, now);
+  return (item.weight ?? 1) * 2 + titleHits * 3 + Math.min(item.bodyHits, 3) + recencyBonus(item.date, now) + (item.policy ? 2.5 : 0);
 }
 
 /* ------------------------------------------------------------------ */
@@ -458,6 +494,7 @@ export function pickTopNews(picked, count) {
 /* ------------------------------------------------------------------ */
 
 const SECTIONS = [
+  { key: 'policy', title: '政策与标准', emoji: '📜', desc: '国家文件 · 部委通知 · 标准与试点' },
   { key: 'embodied', title: '具身智能', emoji: '🤖', desc: '人形机器人 · VLA · 世界模型 · 运动控制' },
   { key: 'llm', title: '大模型与智能体', emoji: '🧠', desc: '基础模型 · 推理 · Agent · 多模态' },
   { key: 'industry', title: '产业与资本', emoji: '🏭', desc: '融资 · 量产 · 政策 · 商业化' },
@@ -766,12 +803,16 @@ export async function buildDigest({ feeds = DEFAULT_FEEDS, options = {}, logger 
   const results = await Promise.allSettled(
     enabled.map(async (feed) => {
       const started = Date.now();
-      const parsed =
-        feed.type === 'bilibili'
-          ? await fetchBilibili(feed)
-          : feed.type === 'zhihu'
-            ? await fetchZhihu(feed)
-            : parseFeed(await fetchText(feed.url, { timeoutMs: 30000, retries: 2 }), feed);
+      let parsed =
+        feed.type === 'govpolicy'
+          ? await fetchGovPolicy(feed)
+          : feed.type === 'bilibili'
+            ? await fetchBilibili(feed)
+            : feed.type === 'zhihu'
+              ? await fetchZhihu(feed)
+              : parseFeed(await fetchText(feed.url, { timeoutMs: 30000, retries: 2 }), feed);
+      if (feed.filter === 'policy') parsed = parsed.filter((it) => it.policy || isPolicy(it));
+      parsed = parsed.map((it) => (feed.filter === 'policy' ? { policy: true, ...it } : it));
       logger(`✓ ${feed.name}：${parsed.length} 条（${Date.now() - started}ms）`);
       return {
         feed,
@@ -794,8 +835,12 @@ export async function buildDigest({ feeds = DEFAULT_FEEDS, options = {}, logger 
     all.push(...result.value.items);
   }
 
-  const cutoff = now.getTime() - config.windowHours * 3_600_000;
-  const fresh = all.filter((item) => item.date && item.date.getTime() >= cutoff && item.date.getTime() <= now.getTime() + 3_600_000);
+  const policyCutoff = now.getTime() - (config.policyWindowHours || config.windowHours) * 3_600_000;
+  const fresh = all.filter((item) => {
+    if (!item.date) return false;
+    const cutoff = item.policy ? policyCutoff : now.getTime() - config.windowHours * 3_600_000;
+    return item.date.getTime() >= cutoff && item.date.getTime() <= now.getTime() + 3_600_000;
+  });
   logger(`时间窗内 ${fresh.length} 条（共 ${all.length} 条，窗口 ${config.windowHours}h）`);
 
   const unique = dedupe(fresh);
@@ -803,11 +848,12 @@ export async function buildDigest({ feeds = DEFAULT_FEEDS, options = {}, logger 
     .map((item) => ({ ...item, ...classify(item) }))
     .filter((item) => {
       if (NOISE.test(item.title)) return false;
+      if (item.policy) return true;
       if (item.titleHits.embodied + item.titleHits.llm === 0 && item.bodyHits < 2) return false;
       return true;
     })
     .map((item) => ({ ...item, score: scoreItem(item, now) }))
-    .filter((item) => item.score >= config.minScore)
+    .filter((item) => item.score >= (item.policy ? config.minScore - 1.5 : config.minScore))
     .sort((a, b) => b.score - a.score);
 
   const picked = selectItems(scored, config);
