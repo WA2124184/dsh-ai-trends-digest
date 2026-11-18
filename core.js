@@ -370,10 +370,12 @@ function eventDup(a, b, df) {
   for (const gram of A) {
     if (!B.has(gram)) continue;
     shared += 1;
-    if ((df?.get(gram) || 0) <= 3) rare += 1;
+    if ((df?.get(gram) || 0) <= 6) rare += 1;
   }
   if (shared / (A.size + B.size - shared) >= 0.45) return true;
-  return rare >= 3 && shared >= 4;
+  const cjk = (str) => (String(str).match(/[一-龥]/g) || []).length;
+  if (cjk(a) >= 8 && cjk(b) >= 8) return rare >= 3 && shared >= 4;
+  return false;
 }
 
 function entityDup(a, b, edf) {
@@ -384,7 +386,7 @@ function entityDup(a, b, edf) {
   for (const e of A) {
     if (!B.has(e)) continue;
     shared += 1;
-    if ((edf?.get(e) || 0) <= 3) rare += 1;
+    if ((edf?.get(e) || 0) <= 4) rare += 1;
   }
   return shared >= 3 && (rare >= 2 || shared >= 4);
 }
