@@ -351,19 +351,97 @@ function similar(a, b) {
   return shared / (setA.size + setB.size - shared) >= 0.62;
 }
 
-export function dedupe(items) {
+function entities(title) {
+  const out = new Set();
+  for (const m of String(title || '').matchAll(/[A-Za-z][A-Za-z0-9.+]{2,}/g)) out.add(m[0].toLowerCase());
+  for (const m of String(title || '').matchAll(/\d+(?:\.\d+)?/g)) out.add(m[0]);
+  return out;
+}
+
+function eventDup(a, b, df) {
+  if (a === b) return true;
+  const [x, y] = a.length <= b.length ? [a, b] : [b, a];
+  if (x.length >= 10 && y.includes(x)) return true;
+  const A = bigrams(a);
+  const B = bigrams(b);
+  if (!A.size || !B.size) return false;
+  let shared = 0;
+  let rare = 0;
+  for (const gram of A) {
+    if (!B.has(gram)) continue;
+    shared += 1;
+    if ((df?.get(gram) || 0) <= 3) rare += 1;
+  }
+  if (shared / (A.size + B.size - shared) >= 0.45) return true;
+  return rare >= 3 && shared >= 4;
+}
+
+function entityDup(a, b, edf) {
+  const A = entities(a);
+  const B = entities(b);
+  let shared = 0;
+  let rare = 0;
+  for (const e of A) {
+    if (!B.has(e)) continue;
+    shared += 1;
+    if ((edf?.get(e) || 0) <= 3) rare += 1;
+  }
+  return shared >= 3 && (rare >= 2 || shared >= 4);
+}
+
+function bigramDf(titles) {
+  const df = new Map();
+  for (const t of titles) for (const g of bigrams(t)) df.set(g, (df.get(g) || 0) + 1);
+  return df;
+}
+
+function entityDf(titles) {
+  const df = new Map();
+  for (const t of titles) for (const e of entities(t)) df.set(e, (df.get(e) || 0) + 1);
+  return df;
+}
+
+function shiftDateKey(key, days) {
+  const d = new Date(`${key}T00:00:00+08:00`);
+  d.setDate(d.getDate() + days);
+  return dateKey(d, 'Asia/Shanghai');
+}
+
+function loadPreviousDay(outputDir, key) {
+  try {
+    const file = path.join(outputDir, 'data', `${key}.json`);
+    const doc = JSON.parse(fs.readFileSync(file, 'utf8'));
+    const secs = doc.sections || {};
+    const sectionItems = Array.isArray(secs) ? secs.flatMap((s) => s.items || []) : Object.values(secs).flat();
+    const items = [...(doc.topNews || []), ...sectionItems];
+    return items.map((item) => ({ link: normalizeLink(item.link), key: titleKey(item.title), title: item.title })).filter((item) => item.key);
+  } catch {
+    return [];
+  }
+}
+
+// 同一天内同一事件只留一条（调用方已按分数降序排好）
+export function dedupe(items, { df = bigramDf(items.map((i) => titleKey(i.title))), edf = entityDf(items.map((i) => i.title)), previous = [] } = {}) {
   const kept = [];
   const links = new Set();
-  const titles = [];
+  const previousLinks = new Set(previous.map((p) => p.link).filter(Boolean));
+  let sameDayDropped = 0;
+  let crossDayDropped = 0;
   for (const item of items) {
-    const link = normalizeLink(item.link);
     const key = titleKey(item.title);
-    if (link && links.has(link)) continue;
-    if (key && titles.some((other) => similar(key, other))) continue;
+    if (!key || key.length < 6) continue;
+    const link = normalizeLink(item.link);
+    if (link) {
+      if (links.has(link)) { sameDayDropped += 1; continue; }
+      if (previousLinks.has(link)) { crossDayDropped += 1; continue; }
+    }
+    if (previous.some((p) => eventDup(p.key, key, df) || entityDup(p.title || '', item.title, edf))) { crossDayDropped += 1; continue; }
+    if (kept.some((k) => eventDup(titleKey(k.title), key, df) || entityDup(k.title, item.title, edf))) { sameDayDropped += 1; continue; }
     if (link) links.add(link);
-    if (key) titles.push(key);
     kept.push(item);
   }
+  kept.sameDayDropped = sameDayDropped;
+  kept.crossDayDropped = crossDayDropped;
   return kept;
 }
 
@@ -843,8 +921,7 @@ export async function buildDigest({ feeds = DEFAULT_FEEDS, options = {}, logger 
   });
   logger(`时间窗内 ${fresh.length} 条（共 ${all.length} 条，窗口 ${config.windowHours}h）`);
 
-  const unique = dedupe(fresh);
-  const scored = unique
+  const scoredAll = fresh
     .map((item) => ({ ...item, ...classify(item) }))
     .filter((item) => {
       if (NOISE.test(item.title)) return false;
@@ -855,6 +932,13 @@ export async function buildDigest({ feeds = DEFAULT_FEEDS, options = {}, logger 
     .map((item) => ({ ...item, score: scoreItem(item, now) }))
     .filter((item) => item.score >= (item.policy ? config.minScore - 1.5 : config.minScore))
     .sort((a, b) => b.score - a.score);
+
+  const dayKey = config.date || dateKey(now, config.timezone);
+  const previous = config.crossDayDedupe === false ? [] : loadPreviousDay(outputDir, shiftDateKey(dayKey, -1));
+  const scored = dedupe(scoredAll, { previous });
+  if (scored.sameDayDropped || scored.crossDayDropped) {
+    logger(`去重：同日合并 ${scored.sameDayDropped} 条，跨日移除 ${scored.crossDayDropped} 条`);
+  }
 
   const picked = selectItems(scored, config);
   const topNews = pickTopNews(picked, config.topNewsCount);

@@ -54,7 +54,8 @@ A finished digest looks like this:
 Generic AI newsletters drown robotics in funding rounds, and paper feeds drown everything in titles. This plugin fixes that with three rules:
 
 - **Topic floors** — `embodied: 3`, `industry: 2`, `research: 2` slots are reserved before score-based filling.
-- **Dedupe** — same story from 量子位 and 新智元 is kept once (link normalisation + title similarity ≥ 0.62).
+- **Same-event dedupe** — link normalisation + title bigram similarity (≥ 0.45) + rare-bigram overlap + entity match (product / org / model names, so Chinese and English coverage of one story collapse into one entry).
+- **Cross-day dedupe** — reads yesterday's `data/<date>.json` and drops stories that already ran yesterday (disable with `crossDayDedupe: false`).
 - **Scoring** — `sourceWeight × 2 + title hits × 3 + body hits + recency`, with a `4.5` floor.
 
 ## Requirements
@@ -230,7 +231,7 @@ This really hits the network for all 23 feeds and prints item count, source heal
 ```text
 23 feeds ──► fetch (30s timeout, 2 retries)
           ──► parse RSS / Atom / JSON Feed
-          ──► 42h window ──► dedupe (link + title similarity)
+          ──► window (policy 30d) ──► score & sort ──► same-day / cross-day dedupe
           ──► classify (embodied / llm / industry / research)
           ──► score ──► topic floors ──► fill by score
           ──► Markdown + HTML + JSON archives
